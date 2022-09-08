@@ -1,0 +1,4 @@
+{
+	"name": "Bulk Import/Export",
+	"route": "/admin/bulk_import"
+}

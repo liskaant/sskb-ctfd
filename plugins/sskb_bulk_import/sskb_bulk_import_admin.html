@@ -1,0 +1,88 @@
+{% extends "admin/base.html" %}
+
+{% block stylesheets %}
+{% endblock %}
+
+{% block content %}
+	<div class="jumbotron">
+		<div class="container">
+			<h1>Bulk Import/Export</h1>
+		</div>
+	</div>
+
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+					<label for="input_import">Import:</label>&nbsp;<input type="file" id="input_import" onchange="bulkImport(event.target)"><br><br>
+					<button onclick="bulkExport()">Export</button>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block scripts %}
+	<script defer src="https://cdn.jsdelivr.net/npm/papaparse@5.3.1/papaparse.min.js"></script>
+	<script>
+		function bulkImport(input) {
+			Papa.parse(input.files[0], {
+				complete: (results) => {
+					let users = [];
+
+					results.data.forEach(row => {
+						if(row[0] === 'Username')
+							return;
+						if(row.length != 4)
+							return;
+
+						users.push({
+							'name': row[0],
+							'email': row[1],
+							'password': row[2],
+							'fields': {
+								'Category': row[3],
+							},
+						});
+					});
+
+					CTFd.fetch('/api/v1/bulk_import', {
+						method: "POST",
+						credentials: "same-origin",
+						headers: {
+							Accept: "application/json",
+							"Content-Type": "application/json"
+						},
+						body: JSON.stringify({'users': users}),
+					}).then(r => r.json()).then(r => alert(JSON.stringify(r)));
+				},
+			});
+		}
+
+		function bulkExport() {
+			CTFd.fetch('/api/v1/bulk_import', {
+				method: "GET",
+				credentials: "same-origin",
+				headers: {
+					Accept: "application/json",
+				},
+			}).then(r => r.json()).then(result => {
+				let users = [['Username', 'Email', 'Password', 'Category'], ...(result.users.map(user => ([
+					user.name,
+					user.email,
+					'',
+					user.fields.Category || '',
+				])))]
+
+				var element = document.createElement('a');
+				element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(Papa.unparse(users)));
+				element.setAttribute('download', 'users.csv');
+
+				element.style.display = 'none';
+				document.body.appendChild(element);
+
+				element.click();
+
+				document.body.removeChild(element);
+			});
+		}
+	</script>
+{% endblock %}
