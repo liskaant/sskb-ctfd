@@ -1,4 +1,4 @@
-FROM ctfd/ctfd:3.5.0
+FROM ctfd/ctfd:3.5.1
 COPY ./plugins /opt/CTFd/CTFd/plugins
 
 USER 0
