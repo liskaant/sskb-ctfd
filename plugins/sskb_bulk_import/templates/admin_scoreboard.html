@@ -1,0 +1,125 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="jumbotron">
+	<div class="container">
+		<h1>Scoreboard</h1>
+	</div>
+</div>
+<div class="container">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="float-right pb-3">
+				<div class="btn-group" role="group">
+					<button type="button" class="btn btn-outline-secondary" data-toggle="tooltip" title="Edit Users" id="users-edit-button">
+						<i class="btn-fa fas fa-pencil-alt"></i>
+					</button>
+					<button type="button" class="btn btn-outline-secondary" id="scoreboard-edit-button" data-toggle="tooltip" title="Hide/Unhide Accounts">
+						<i class="btn-fa fas fa-eye"></i>
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	{% if Configs.user_mode == UserModeTypes.TEAMS %}
+	<div class="row pb-4">
+		<div class="col-md-12">
+			<ul class="nav nav-tabs nav-fill" role="tablist">
+				<li class="nav-item">
+					<a class="nav-link active" data-toggle="tab" href="#standings" role="tab">
+						Teams
+					</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" data-toggle="tab" href="#user-standings" role="tab">
+						Users
+					</a>
+				</li>
+			</ul>
+		</div>
+	</div>
+	{% endif %}
+
+	<div class="row">
+		<div class="col-md-12 table-responsive">
+			<div class="tab-content">
+				<div class="tab-pane fade show active" id="standings" role="tabpanel">
+					{% include "admin/scoreboard/standings.html" %}
+				</div>
+				{% if Configs.user_mode == UserModeTypes.TEAMS %}
+				<div class="tab-pane fade" id="user-standings" role="tabpanel">
+					{% include "admin/scoreboard/users.html" %}
+				</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+	<script>
+		window.addEventListener('load', () => {
+			function bulkEditUsers(_event) {
+				let userIDs = CTFd.lib.$("input[data-user-id]:checked").map(function() {
+					return CTFd.lib.$(this).data("user-id");
+				});
+
+				CTFd.ui.ezq.ezAlert({
+					title: "Edit Users",
+					body: CTFd.lib.$(`
+					<form id="users-bulk-edit">
+						<div class="form-group">
+							<label>Verified</label>
+							<select name="verified" data-initial="">
+								<option value="">--</option>
+								<option value="true">True</option>
+								<option value="false">False</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label>Banned</label>
+							<select name="banned" data-initial="">
+								<option value="">--</option>
+								<option value="true">True</option>
+								<option value="false">False</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label>Hidden</label>
+							<select name="hidden" data-initial="">
+								<option value="">--</option>
+								<option value="true">True</option>
+								<option value="false">False</option>
+							</select>
+						</div>
+					</form>
+					`),
+					button: "Submit",
+					success: function() {
+						let data = CTFd.lib.$("#users-bulk-edit").serializeJSON(true);
+						const reqs = [];
+						for (var userID of userIDs) {
+							reqs.push(
+								CTFd.fetch(`/api/v1/users/${userID}`, {
+									method: "PATCH",
+									body: JSON.stringify(data)
+								})
+							);
+						}
+						Promise.all(reqs).then(_responses => {
+							window.location.reload();
+						});
+					}
+				});
+			}
+
+			CTFd.lib.$("#users-edit-button").click(bulkEditUsers);
+		});
+	</script>
+{% endblock %}
+
+{% block entrypoint %}
+	<script defer src="{{ url_for('views.themes', theme='admin', path='js/pages/scoreboard.js') }}"></script>
+{% endblock %}

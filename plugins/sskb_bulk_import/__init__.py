@@ -83,6 +83,8 @@ class BulkImport(Resource):
 def load(app):
 	dir_path = os.path.dirname(os.path.realpath(__file__))
 	override_template('sskb_bulk_import_admin.html', open(os.path.join(dir_path, 'templates/sskb_bulk_import.html')).read())
+	override_template('admin/scoreboard.html', open(os.path.join(dir_path, 'templates/admin_scoreboard.html')).read())
+	override_template('admin/scoreboard/standings.html', open(os.path.join(dir_path, 'templates/admin_scoreboard_standings.html')).read())
 
 	api = Blueprint('bulk_import_api', __name__, url_prefix='/api/v1')
 	BulkImportApi = Api(api, version='v1', doc=app.config.get('SWAGGER_UI'))
